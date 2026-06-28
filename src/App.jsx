@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import Sidebar from "./components/Sidebar"
 import Navbar from "./components/Navbar"
@@ -10,16 +10,63 @@ function App() {
 
   const [searchTerm, setSearchTerm] = useState("")
 
-  const [links, setLinks] = useState(() => {
+  const [links, setLinks] = useState([])
 
-    const savedLinks =
-      localStorage.getItem("quickLinks")
+  const [categories, setCategories] = useState([])
 
-    return savedLinks
-      ? JSON.parse(savedLinks)
-      : []
 
-  })
+  useEffect(() => {
+
+    async function fetchLinks() {
+
+      try {
+
+        const response = await fetch(
+          "http://127.0.0.1:8000/api/links/"
+        )
+
+        const data = await response.json()
+
+        setLinks(data)
+
+      }
+
+      catch (error) {
+
+        console.log(error)
+
+      }
+
+    }
+
+
+    async function fetchCategories() {
+
+      try {
+
+        const response = await fetch(
+          "http://127.0.0.1:8000/api/categories/"
+        )
+
+        const data = await response.json()
+
+        setCategories(data)
+
+      }
+
+      catch (error) {
+
+        console.log(error)
+
+      }
+
+    }
+
+
+    fetchLinks()
+    fetchCategories()
+
+  }, [])
 
 
   return (
@@ -31,7 +78,6 @@ function App() {
         links={links}
       />
 
-
       <div className="flex-1">
 
         <Navbar
@@ -39,12 +85,12 @@ function App() {
           setSearchTerm={setSearchTerm}
         />
 
-
         <Dashboard
           selectedMenu={selectedMenu}
           searchTerm={searchTerm}
           links={links}
           setLinks={setLinks}
+          categories={categories}
         />
 
       </div>

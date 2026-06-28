@@ -13,7 +13,7 @@ function StatsCards({ links }) {
   ).length
 
   const categories = new Set(
-    links.map((link) => link.category)
+    links.map((link) => link.category.name)
   ).size
 
 

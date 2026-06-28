@@ -28,7 +28,7 @@ function Sidebar({
     }
 
     return links.filter(
-      link => link.category === category
+      link => link.category.name === category
     ).length
   }
 

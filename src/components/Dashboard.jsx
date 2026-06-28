@@ -13,7 +13,8 @@ function Dashboard({
   selectedMenu,
   searchTerm,
   links,
-  setLinks
+  setLinks,
+  categories
 }) {
 
   const getHeading = () => {
@@ -123,6 +124,7 @@ function Dashboard({
         links={links}
         setLinks={setLinks}
         searchTerm={searchTerm}
+        categories={categories}
       />
 
     </div>

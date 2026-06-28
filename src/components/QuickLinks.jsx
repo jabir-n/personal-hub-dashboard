@@ -5,12 +5,13 @@ function QuickLinks({
   selectedMenu,
   links,
   setLinks,
-  searchTerm
+  searchTerm,
+  categories
 }) {
 
   const [siteName, setSiteName] = useState("")
   const [siteUrl, setSiteUrl] = useState("")
-  const [category, setCategory] = useState("Gaming")
+  const [category, setCategory] = useState("")
 
 
   useEffect(() => {
@@ -21,30 +22,51 @@ function QuickLinks({
   }, [links])
 
 
-  const addLink = () => {
+  const addLink = async () => {
 
-    if (!siteName || !siteUrl) return
+    if (!siteName || !siteUrl || !category) return
 
-    const newLink = {
-      name: siteName,
-      url: siteUrl,
-      category: category,
-      favorite: false
+    try {
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/links/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: siteName,
+            url: siteUrl,
+            category: category,
+            favorite: false,
+          }),
+        }
+      )
+
+      const newLink = await response.json()
+
+      setLinks([...links, newLink])
+
+      setSiteName("")
+      setSiteUrl("")
+      setCategory("")
+
+    } catch (error) {
+
+      console.log(error)
+
     }
 
-    setLinks([...links, newLink])
-
-    setSiteName("")
-    setSiteUrl("")
   }
 
   const handleKeyDown = (e) => {
 
-  if (e.key === "Enter") {
-    addLink()
-  }
+    if (e.key === "Enter") {
+      addLink()
+    }
 
-}
+  }
 
 
   const deleteLink = (index) => {
@@ -70,28 +92,28 @@ function QuickLinks({
 
   const filteredLinks = links.filter((link) => {
 
-  const matchesMenu = (() => {
+    const matchesMenu = (() => {
 
-    if (selectedMenu === "Favorites") {
-      return link.favorite
-    }
+      if (selectedMenu === "Favorites") {
+        return link.favorite
+      }
 
-    if (selectedMenu === "Dashboard") {
-      return true
-    }
+      if (selectedMenu === "Dashboard") {
+        return true
+      }
 
-    return link.category === selectedMenu
-  })()
-
-
-  const matchesSearch =
-    link.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
+      return link.category.name === selectedMenu
+    })()
 
 
-  return matchesMenu && matchesSearch
-})
+    const matchesSearch =
+      link.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+
+
+    return matchesMenu && matchesSearch
+  })
 
 
   const getLogo = (name) => {
@@ -151,9 +173,20 @@ function QuickLinks({
             onChange={(e) => setCategory(e.target.value)}
             className="bg-zinc-950/80 text-white px-4 py-3 rounded-2xl outline-none border border-zinc-800"
           >
-            <option>Gaming</option>
-            <option>Study</option>
-            <option>Productivity</option>
+
+            <option value="">Select Category</option>
+
+            {categories.map((category) => (
+
+              <option
+                key={category.id}
+                value={category.id}
+              >
+                {category.name}
+              </option>
+
+            ))}
+
           </select>
 
 
@@ -220,7 +253,7 @@ function QuickLinks({
                     </h3>
 
                     <p className="text-zinc-400 mb-4">
-                      {link.category} Platform
+                      {link.category.name} Platform
                     </p>
 
 
@@ -240,11 +273,10 @@ function QuickLinks({
 
                   <button
                     onClick={() => toggleFavorite(index)}
-                    className={`text-3xl ${
-                      link.favorite
-                        ? "text-yellow-400"
-                        : "text-zinc-600"
-                    }`}
+                    className={`text-3xl ${link.favorite
+                      ? "text-yellow-400"
+                      : "text-zinc-600"
+                      }`}
                   >
                     ★
                   </button>
