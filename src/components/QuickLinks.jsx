@@ -12,14 +12,16 @@ function QuickLinks({
   const [siteName, setSiteName] = useState("")
   const [siteUrl, setSiteUrl] = useState("")
   const [category, setCategory] = useState("")
+  const [editingId, setEditingId] = useState(null)
+
+  const [editName, setEditName] = useState("")
+
+  const [editUrl, setEditUrl] = useState("")
+
+  const [editCategory, setEditCategory] = useState("")
 
 
-  useEffect(() => {
-    localStorage.setItem(
-      "quickLinks",
-      JSON.stringify(links)
-    )
-  }, [links])
+
 
 
   const addLink = async () => {
@@ -44,9 +46,15 @@ function QuickLinks({
         }
       )
 
-      const newLink = await response.json()
+      await response.json()
 
-      setLinks([...links, newLink])
+      const linksResponse = await fetch(
+        "http://127.0.0.1:8000/api/links/"
+      )
+
+      const updatedLinks = await linksResponse.json()
+
+      setLinks(updatedLinks)
 
       setSiteName("")
       setSiteUrl("")
@@ -69,26 +77,127 @@ function QuickLinks({
   }
 
 
-  const deleteLink = (index) => {
+  const deleteLink = async (id) => {
 
-    const updatedLinks = links.filter(
-      (_, i) => i !== index
-    )
+    try {
 
-    setLinks(updatedLinks)
+      await fetch(
+        `http://127.0.0.1:8000/api/links/${id}/`,
+        {
+          method: "DELETE",
+        }
+      )
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/links/"
+      )
+
+      const updatedLinks = await response.json()
+
+      setLinks(updatedLinks)
+
+    }
+
+    catch (error) {
+
+      console.log(error)
+
+    }
+
   }
 
 
-  const toggleFavorite = (index) => {
+  const toggleFavorite = async (link) => {
 
-    const updatedLinks = [...links]
+    try {
 
-    updatedLinks[index].favorite =
-      !updatedLinks[index].favorite
+      await fetch(
+        `http://127.0.0.1:8000/api/links/${link.id}/`,
+        {
+          method: "PATCH",
 
-    setLinks(updatedLinks)
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            favorite: !link.favorite,
+          }),
+
+        }
+      )
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/links/"
+      )
+
+      const updatedLinks = await response.json()
+
+      setLinks(updatedLinks)
+
+    }
+
+    catch (error) {
+
+      console.log(error)
+
+    }
+
   }
 
+  const startEdit = (link) => {
+
+    setEditingId(link.id)
+
+    setEditName(link.name)
+
+    setEditUrl(link.url)
+
+    setEditCategory(link.category.id)
+
+  }
+
+  const saveEdit = async () => {
+
+    try {
+
+      await fetch(
+        `http://127.0.0.1:8000/api/links/${editingId}/`,
+        {
+          method: "PATCH",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            name: editName,
+            url: editUrl,
+            category: editCategory,
+          }),
+
+        }
+      )
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/links/"
+      )
+
+      const updatedLinks = await response.json()
+
+      setLinks(updatedLinks)
+
+      setEditingId(null)
+
+    }
+
+    catch (error) {
+
+      console.log(error)
+
+    }
+
+  }
 
   const filteredLinks = links.filter((link) => {
 
@@ -248,21 +357,85 @@ function QuickLinks({
 
                   <div>
 
-                    <h3 className="text-white text-3xl font-bold mb-2">
-                      {link.name}
-                    </h3>
+                    {editingId === link.id ? (
 
-                    <p className="text-zinc-400 mb-4">
-                      {link.category.name} Platform
-                    </p>
+                      <div className="space-y-3">
 
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="bg-zinc-900 text-white px-3 py-2 rounded-xl w-full"
+                        />
 
-                    <button
-                      onClick={() => window.open(link.url)}
-                      className="bg-gradient-to-r from-purple-500 to-blue-500 px-6 py-3 rounded-2xl text-white font-semibold hover:scale-105 transition-all"
-                    >
-                      Open Link
-                    </button>
+                        <input
+                          type="text"
+                          value={editUrl}
+                          onChange={(e) => setEditUrl(e.target.value)}
+                          className="bg-zinc-900 text-white px-3 py-2 rounded-xl w-full"
+                        />
+
+                        <select
+                          value={editCategory}
+                          onChange={(e) => setEditCategory(e.target.value)}
+                          className="bg-zinc-900 text-white px-3 py-2 rounded-xl w-full"
+                        >
+
+                          {categories.map((category) => (
+
+                            <option
+                              key={category.id}
+                              value={category.id}
+                            >
+                              {category.name}
+                            </option>
+
+                          ))}
+
+                        </select> 
+                        
+                        <div className="flex gap-3">
+
+                          <button
+                            onClick={saveEdit}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl"
+                          >
+                            Save
+                          </button>
+
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-xl"
+                          >
+                            Cancel
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    ) : (
+
+                      <>
+
+                        <h3 className="text-white text-3xl font-bold mb-2">
+                          {link.name}
+                        </h3>
+
+                        <p className="text-zinc-400 mb-4">
+                          {link.category.name} Platform
+                        </p>
+
+                        <button
+                          onClick={() => window.open(link.url)}
+                          className="bg-gradient-to-r from-purple-500 to-blue-500 px-6 py-3 rounded-2xl text-white font-semibold hover:scale-105 transition-all"
+                        >
+                          Open Link
+                        </button>
+
+                      </>
+
+                    )}
 
                   </div>
 
@@ -272,7 +445,7 @@ function QuickLinks({
                 <div className="flex gap-4">
 
                   <button
-                    onClick={() => toggleFavorite(index)}
+                    onClick={() => toggleFavorite(link)}
                     className={`text-3xl ${link.favorite
                       ? "text-yellow-400"
                       : "text-zinc-600"
@@ -281,9 +454,15 @@ function QuickLinks({
                     ★
                   </button>
 
+                  <button
+                    onClick={() => startEdit(link)}
+                    className="text-blue-400 hover:text-blue-500"
+                  >
+                    Edit
+                  </button>
 
                   <button
-                    onClick={() => deleteLink(index)}
+                    onClick={() => deleteLink(link.id)}
                     className="text-red-400 hover:text-red-500"
                   >
                     Delete
